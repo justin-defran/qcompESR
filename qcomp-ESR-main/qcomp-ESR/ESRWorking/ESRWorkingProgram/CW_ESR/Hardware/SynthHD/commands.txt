@@ -1,0 +1,55 @@
+C) Control Channel (A(0) or B(1)) 0
+f) RF Frequency Now (MHz)  60.0, 1000.0
+W) RF Power (dBm)  5.000, 0.000
+V) RF Calibration success?  1, 1
+Z) Temperature Comp (0=none, 1=on set, 2=1sec, 3=10sec) 3, 3
+a) VGA DAC Setting (0=mim, 45000=max) 17481, 20414
+~) RF Phase Step (0=mimimum, 360.0=maximum) 0.0000, 0.0000
+h) RF High(1) or Low(0) Power 1, 1
+r) PA On(1) or Off(0) 1, 0
+E) PLL Chip En On(1) or Off(0) 1, 0
+I) PLL output power 2, 2
+U) PLL charge pump current 6, 6
+d) PLL mute till LD 1, 1
+m) Muxout function 6, 6
+T) Autocal On(1) or Off(0) 1, 1
+b) Feedback select Fundamental(1) or Divided(0) 0, 0
+i) Channel spacing (Hz) 1000
+v) Show version (0=firmware, 1=hardware)
+e) Write all settings to eeprom
+x) Reference (external=0, int 27MHz=1, int 10MHz=2)  0
+l) Sweep lower frequency (MHz) 1000.0, 1000.0
+u) Sweep upper frequency (MHz) 5000.0, 5000.0
+s) Sweep step size (MHz) 200.0, 200.0
+t) Sweep step time (mS) 50.000 ms, 50.000 ms
+[) Sweep amplitude low (dBm) 0.00, 0.00
+]) Sweep amplitude high (dBm) 0.00, 0.00
+^) Sweep direction (up=1 / down=0)  1, 1
+k) Sweep differential frequency seperation (MHz) 1.0
+n) Sweep differential: (0=off, 1=ChA-DiffFreq, 2=ChA+DiffFreq)  0
+X) Sweep type (linear=0 / tabular=1)  0, 0
+g) Sweep run (on=1 / off=0)  0
+c) Sweep set continuous mode  0
+w) Enable trigger: (0=software, 1=sweep, 2=step, 3=hold all)  0
+F) AM step time in microseconds 8
+q) AM # of cycle repetitions 65
+A) AM Run Continuous (on=1 / off=0) 0
+P) Pulse On time is 1, 1 us
+O) Pulse Off time is 10, 10 us
+R) Pulse # of repetitions is 10, 10
+:) Pulse Invert signal (on=1 / off=0) 0, 0
+G) Pulse Run one burst
+j) Pulse continuous mode  0
+D) Pulse dual channel mode  0
+<) FM Frequency is 500, 500 Hz
+>) FM Deviation is 10000, 10000 Hz
+,) FM # of repetitions is 100, 100
+;) FM Type (sinusoid=1 / chirp=0) 0, 0
+/) FM continuous mode  0
+p) Phase lock status (lock=1 / unlock=0)  0, 0
+z) Temperature in degrees C 31.621
+*) PLL reference frequency MHz 10.0
++) Model Type
+-) Serial Number  324
+Cal datecode YYWW 1639
+?) help

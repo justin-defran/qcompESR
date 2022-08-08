@@ -1,0 +1,7 @@
+StartFreq=2.60
+StopFreq=3.00
+NumOfSteps=100
+DwellTime=10
+NumOfAvgs=100
+PowerSyn=0
+PowerAmp=0

@@ -1,0 +1,180 @@
+'''
+Created on Jun 8, 2015
+
+@author: Duttlab8
+'''
+import visa,sys,traceback,time
+
+class SynthUSB(object):
+    '''
+    This is based on pyvisa version 1.7. This won't work with pyvisa < 1.7. 
+    This is the main module imported to other programs if not using control panel GUI.
+    It contains 8 main method:
+        1, __init__: finds SynthUSB, gets visa, and gets ready to communicate.
+        2, setPower: set output level.
+        3, setFreq: set frequency.
+        4, switch: switch on/off of output.
+        5, write: write default settings to eeprom.
+        6, read: read status from SynthUSB.
+        7, setSweep: set up a freq sweep.
+        8, startSweep: start a sweep.
+        9, stopSweep: stop a sweep.
+    If not using GUI control panel, just import this class.
+    '''
+    def __init__(self,debug=False):
+        self.debug=debug
+        rm = visa.ResourceManager()
+        visas=rm.list_resources()
+        print(visas)
+
+        if 'ASRL3::INSTR' in visas:
+            try:
+                ins = rm.open_resource('ASRL3::INSTR',open_timeout=1)
+                ins.write_termination=None
+                ins.read_termination='\n'
+                info = []
+                ins.write('?')
+                for i in range(27):
+                    info.append(ins.read().replace('\r', '').replace('\n',''))
+                if self.debug:
+                    print(info)
+                if info[24]=='-) Serial Number  242':
+                    self.syn=ins
+                    syn_info=info
+                    if self.debug:
+                        print('ok')
+            except visa.VisaIOError:
+                pass
+                sys.stderr.write(traceback.format_exc())
+        self.current_status={}
+
+        try:
+            self.get_status(syn_info)
+        except:
+            pass
+            #sys.stderr.write(traceback.format_exc())
+            
+    def get_status(self,*args):
+        if len(args)==0:
+            self.syn.write('?')
+            syn_info=[]
+            for i in range(27):
+                syn_info.append(self.syn.read().replace('\r', '').replace('\n',''))
+        else:
+            syn_info=args[0]
+        if self.debug:
+            print(syn_info)
+
+        self.current_status['LEVEL']=int(syn_info[3].replace('a) set RF Power (0=mimimum, 3=maximum) ',''))
+        self.current_status['FREQ']=float(syn_info[0].replace('f) RF Frequency Now (MHz) ',''))
+        self.current_status['SWITCH']=int(syn_info[1][-1])
+        self.current_status['STARTFREQ']=float(syn_info[7].replace('l) set lower frequency for sweep (MHz) ',''))
+        self.current_status['STOPFREQ']=float(syn_info[8].replace('u) set upper frequency for sweep (Mhz) ',''))
+        self.current_status['STEPSIZE']=float(syn_info[9].replace('s) set step size for sweep (MHz) ',''))
+        self.current_status['STEPTIME']=float(syn_info[10].replace('t) set step time is ','')[:-3])
+        self.current_status['CONTINUOUS']=syn_info[12][-1]=='1'
+        self.current_status['PULSEON']=int(syn_info[13].replace('P) Pulse On time is ','')[:-3])
+        self.current_status['PULSEOFF']=int(syn_info[14].replace('O) Pulse Off time is ','')[:-3])
+        self.current_status['PULSING']=syn_info[15][-1]=='1'
+        self.current_status['LOCKED']=syn_info[16][-1]=='1'
+        
+        if self.debug:
+            print(self.current_status)
+        return self.current_status
+        
+    def switch(self,on):
+        if on:
+            self.write('o1')
+            self.current_status['SWITCH']='1'
+        else:
+            self.syn.write('o0')
+            self.current_status['SWITCH']='0'
+            
+    def setPower(self,level):
+        if level in [0,1,2,3]:
+            self.syn.write('a'+str(level))
+            self.current_status['LEVEL']=level
+        else:
+            sys.stderr.write('Please input valid value for level (0,1,2,3)!')
+            
+    def setFreq(self,freq):
+        if freq<34.4:
+            sys.stderr.write('Frequency is too low!')
+            return
+        if freq>4400:
+            sys.stderr.write('Frequency is too high!')
+            return
+        cmd='f'+str(freq)
+        if '.' not in cmd:
+            cmd+='.0'
+        self.syn.write(cmd)
+        self.current_status['FREQ']=freq
+            
+    def setSweep(self,start,stop,step,t):
+        if start<34.4:
+            sys.stderr.write('Start Frequency is too low!')
+            return
+        if stop>4400:
+            print(start)
+            print(stop)
+            print(step)
+            sys.stderr.write('Stop Frequency is too high!')
+            return
+        if start>=stop:
+            sys.stderr.write('Start Frequency is higher than Stop Frequency!')
+            return
+        if step>stop-start:
+            sys.stderr.write('Less than 1 step!')
+            return
+        cmd1='l'+str(start)
+        if '.' not in cmd1:
+            cmd1+='.0'
+        cmd2='u'+str(stop)
+        if '.' not in cmd2:
+            cmd2+='.0'
+        cmd3='s'+str(step)
+        if '.' not in cmd3:
+            cmd3+='.0'
+        cmd4='t'+str(t)
+        if '.' not in cmd4:
+            cmd4+='.0'
+        self.syn.write(cmd1+cmd2+cmd3+cmd4)
+        
+        self.current_status['STARTFREQ']=start
+        self.current_status['STOPFREQ']=stop
+        self.current_status['STEPSIZE']=step
+        self.current_status['STEPTIME']=t
+        
+    def startSweep(self,continuous=False):
+        '''
+        if continuous:
+            if not self.current_status['CONTINUOUS']:
+                self.syn.write('c1')
+                self.current_status['CONTINUOUS']=True
+        else:
+            if self.current_status['CONTINUOUS']:
+                self.syn.write('c0')
+                self.current_status['CONTINUOUS']=False
+        '''
+        self.syn.write('g1')
+        
+    def stopSweep(self):
+        self.syn.write('g0')
+        
+#     if __name__ == '__main__':
+#         
+#         #syn = self(debug=True)
+#         self.syn.setFreq(1000)
+#         self.syn.setPower(3)
+#  
+#         self.syn.get_status()
+        
+    def cleanup(self):
+        self.syn.close()
+
+
+            
+
+if __name__ == '__main__':
+    syn=SynthUSB(True)
+    syn.setFreq(2800)

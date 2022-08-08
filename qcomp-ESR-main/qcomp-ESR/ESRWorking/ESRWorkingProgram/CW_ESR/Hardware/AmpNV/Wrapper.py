@@ -1,0 +1,98 @@
+'''
+Created on May 11, 2015
+
+@author: Kai Zhang
+'''
+import visa,sys,traceback,time
+
+class AmpNV(object):
+    '''
+    This is based on pyvisa version 1.7. This won't work with pyvisa < 1.7. 
+    Make sure it's connected to COM7 for using ASRL7::INSTR.
+    This is the main module imported to other programs if not using control panel GUI.
+    It contains 5 main method:
+        1, __init__: finds AmpNV, gets visa, and gets ready to communicate.
+        2, set: set output level.
+        3, switch: switch on/off of output.
+        4, write: write default settings to eeprom.
+        5, read: read status from AmpNV.
+    If not using GUI control panel, just import this class.
+    '''
+    def __init__(self,debug=False):
+        self.debug=debug
+        rm = visa.ResourceManager()
+        visas=rm.list_resources()
+        print(visas)
+
+        try:
+            ins = rm.open_resource('ASRL7::INSTR',open_timeout=1)
+            ins.write_termination=None
+            ins.read_termination='\n'
+            info = []
+            ins.write('*IDN?')
+            for i in range(14):
+                info.append(ins.read().replace('\r', '').replace('\n',''))
+            if self.debug:
+                print(info)
+            if info[6]=='-) serial number  20' and info[5]=='+) model type':
+                self.amp=ins
+                amp_info=info
+        except visa.VisaIOError:
+            pass
+            sys.stderr.write(traceback.format_exc())
+        self.current_status={}
+        try:
+            self.get_status(amp_info)
+        except:
+            pass
+            #sys.stderr.write(traceback.format_exc())
+        
+    def get_status(self,*args):
+        if len(args)==0:
+            self.amp.write('?')
+            amp_info=[]
+            for i in range(14):
+                amp_info.append(self.amp.read().replace('\r', '').replace('\n',''))
+        else:
+            amp_info=args[0]
+        if self.debug:
+            print(amp_info)
+        self.current_status['LEVEL']=int(amp_info[0].replace('a) set RF Power (0=mimimum, 63=maximum) ',''))
+        self.current_status['SWITCH']=int(amp_info[1].replace('n) PA enable bit (0=off, 1=on) ',''))
+        self.current_status['TEST5V']=float(amp_info[8].replace('1) test 5V power rail ','').replace(' V',''))
+        self.current_status['TEST13V']=float(amp_info[9].replace('2) test 13V power rail ','').replace(' V',''))
+        self.current_status['TEST_A']= amp_info[10]=='3) test PA bias alarm output (0=ok, 1=alarm) 0'
+        self.current_status['TEST_T']= amp_info[11]=='4) test PA bias trigger output (0=alarm, 1=ok) 1'
+        self.current_status['T']=float(amp_info[12].replace('5) test PA temperature ','').replace(' C',''))
+        
+        return self.current_status
+        
+    def set(self,level):
+        '''
+        Sets the output level. 0.5dB each step.
+        @param level: integer from 0 to 63
+        '''
+        if level<=63 and level>=0:
+            self.amp.write('a'+str(int(level)))
+        
+    def switch(self,on_off):
+        '''
+        Power on/off of the output.
+        @param on_off: T/F, True means on
+        '''
+        if on_off:
+            self.amp.write('n1')
+        else:
+            self.amp.write('n0')
+        
+    def cleanup(self):
+        self.amp.write('n0')
+        self.amp.close()
+
+
+if __name__ == '__main__':
+    amp=AmpNV(True)
+    amp.switch(True)
+    print(amp.get_status())
+    amp.switch(False)
+    
